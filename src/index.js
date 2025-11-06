@@ -1,18 +1,48 @@
 // src/index.js
-import { loadRecords, loadRecordsAllPages } from "./gateway.js";
-import { dataSetFinanceiro } from "./payloads/financeiro.js";
-// import { dataSetParceiroCliente } from "./payloads/parceiro.js";
+import { loadRecords } from "./gateway.js";
+import { dataSetTodasEmpresas6m } from "./payloads/financeiro.js";
+import { carregarTitulosNoBanco } from "./etlFinanceiro.js";
 
-async function main() {
+export async function main() {
   try {
-    // Financeiro - títulos a receber (RECDESP=1), empresa 1
-    const ds = dataSetFinanceiro({ codeEmp: 20, recDesp: 1 });
+    console.log("🚀 Iniciando sincronização: todas as empresas, últimos 6 meses...");
 
-    // Buscar apenas a 1ª página (até 100 reg, conforme pageSize)
-    const firstPage = await loadRecords(ds);
-    console.dir(firstPage, { depth: null });
+    const base = dataSetTodasEmpresas6m();
+    const pageSize = 50;
+    let page = 0;
+    let total = 0;
+
+    while (true) {
+      const ds = { ...base, offsetPage: String(page), pageSize: String(pageSize) };
+      console.log(`🔎 Buscando página ${page}...`);
+
+      const resp = await loadRecords(ds);
+      let registros = resp?.responseBody?.entities?.entity ?? [];
+
+      // Pode vir um objeto único, normalizamos pra array
+      if (!Array.isArray(registros)) registros = registros ? [registros] : [];
+
+      if (registros.length === 0) {
+        console.log("📭 Nenhum registro retornado. Fim da carga.");
+        break;
+      }
+
+      await carregarTitulosNoBanco(registros);
+      total += registros.length;
+      console.log(`💾 Página ${page} gravada (${registros.length}). Acumulado: ${total}`);
+
+      // Parar se for última página
+      if (registros.length < pageSize) break;
+      page++;
+    }
+
+    console.log(`✅ Concluído: ${total} títulos processados e salvos no banco.`);
+    return { ok: true, total };
+
   } catch (err) {
-    console.error("Falha:", err?.response?.data || err.message);
+    console.error("❌ Falha:", err?.response?.data || err.message);
   }
 }
+
+// Executa
 main();
