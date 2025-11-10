@@ -16,12 +16,12 @@ function parseDMY(dmy) {
 }
 
 // Calcula status
-function calcStatus(dtVenc, dhBaixa) {
+function calcStatus(DTVENC, dhBaixa) {
   if (dhBaixa) return "pago";
-  if (!dtVenc) return null;
+  if (!DTVENC) return null;
   const hoje = new Date();
   const z = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const vencZ = z(dtVenc);
+  const vencZ = z(DTVENC);
   const hojeZ = z(hoje);
   if (vencZ < hojeZ) return "atrasado";
   return "a vencer";
@@ -33,9 +33,9 @@ function mapRowToDb(row) {
 
   const nufin = get(0) ? Number(get(0)) : null;
   const dhBaixaStr = get(2);
-  const dtVencStr = get(3);
+  const DTVENCStr = get(3);
   const dtBaixa = parseDMY(dhBaixaStr);
-  const dtVenc = parseDMY(dtVencStr);
+  const DTVENC = parseDMY(DTVENCStr);
 
   let numnota = get(4) || get(7);
   const valorDesdobra = get(8) ? Number(get(8)) : null;
@@ -46,7 +46,7 @@ function mapRowToDb(row) {
 
   const codemp = get(6) ? Number(get(6)) : null;
   const codparc = get(5) ? Number(get(5)) : null;
-  const status = calcStatus(dtVenc, dtBaixa);
+  const status = calcStatus(DTVENC, dtBaixa);
 
   return {
     nufin,
@@ -55,7 +55,7 @@ function mapRowToDb(row) {
     descr_natureza: descrNatureza,
     numnota: numnota ? Number(numnota) : null,
     valor_desdobra: valorDesdobra,
-    dt_vencimento: dtVenc ? dtVenc.toISOString().slice(0, 10) : null,
+    dt_vencimento: DTVENC ? DTVENC.toISOString().slice(0, 10) : null,
     dt_baixa: dtBaixa ? dtBaixa.toISOString() : null,
     codemp,
     codparc,
@@ -67,7 +67,7 @@ function mapRowToDb(row) {
 // UPSERT
 async function upsertTitulo(client, t) {
   const sql = `
-    INSERT INTO titulos_financeiros
+    INSERT INTO titulos_financeiro
       (nufin, nome_empresa, nome_parceiro, descr_natureza, numnota, valor_desdobra,
        dt_vencimento, dt_baixa, codemp, codparc, status, situacao)
     VALUES
@@ -83,7 +83,7 @@ async function upsertTitulo(client, t) {
       codemp=EXCLUDED.codemp,
       codparc=EXCLUDED.codparc,
       status=EXCLUDED.status,
-      situacao=COALESCE(titulos_financeiros.situacao,EXCLUDED.situacao);
+      situacao=COALESCE(titulos_financeiro.situacao,EXCLUDED.situacao);
   `;
   const params = [
     t.nufin, t.nome_empresa, t.nome_parceiro, t.descr_natureza,
@@ -100,7 +100,16 @@ export async function carregarTitulosNoBanco(registros) {
     await client.query("BEGIN");
     for (const row of registros) {
       const t = mapRowToDb(row);
-      if (!t.nufin) continue;
+
+      // ⚙️ Regras de filtragem:
+      // 1️⃣ nufin deve existir
+      // 2️⃣ numnota deve ser diferente de 0
+      // 3️⃣ descr_natureza deve começar com 'receita'
+      const descr = (t.descr_natureza || "").toLowerCase().trim();
+      const startsWithReceita = descr.startsWith("receita");
+
+      if (!t.nufin || !t.numnota || t.numnota === 0 || !startsWithReceita) continue;
+
       await upsertTitulo(client, t);
     }
     await client.query("COMMIT");

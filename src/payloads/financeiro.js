@@ -24,7 +24,7 @@ export function dataSetTodasEmpresas6m() {
 
   return {
     rootEntity: "Financeiro",
-    includePresentationFields: "N",
+    includePresentationFields: "S",
     tryJoinedFields: "true",
     offsetPage: "0",
     pageSize: "50", // a API retorna até 50 por página
@@ -48,8 +48,8 @@ export function dataSetTodasEmpresas6m() {
           list: [
             "NUFIN",     // f0
             "ATRASO",    // f1
-            "DHBAIXA",   // f2
-            "DTVENC",    // f3
+            "DHBAIXA",   // f3
+            "DTVENC",    // f2
             "NUNOTA",    // f4
             "CODPARC",   // f5
             "CODEMP",    // f6
