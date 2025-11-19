@@ -1,48 +1,46 @@
-  // src/index.js
-  import { loadRecords } from "./gateway.js";
-  import { dataSetTodasEmpresas6m } from "./payloads/financeiro.js";
-  import { carregarTitulosNoBanco } from "./etlFinanceiro.js";
 
-  export async function main() {
-    try {
-      console.log("🚀 Iniciando sincronização: todas as empresas, últimos 6 meses...");
+import "dotenv/config";  
 
-      const base = dataSetTodasEmpresas6m();
-      const pageSize = 50;
-      let page = 0;
-      let total = 0;
+import { loadRecords } from "./gateway.js";
+import { dataSetTodasEmpresas6m } from "./payloads/financeiro.js";
+import { carregarTitulosNoBanco } from "./etlFinanceiro.js";
 
-      while (true) {
-        const ds = { ...base, offsetPage: String(page), pageSize: String(pageSize) };
-        console.log(`🔎 Buscando página ${page}...`);
+export async function main() {
+  try {
+    console.log("🚀 Iniciando sincronização: todas as empresas, últimos 6 meses...");
 
-        const resp = await loadRecords(ds);
-        let registros = resp?.responseBody?.entities?.entity ?? [];
+    const base = dataSetTodasEmpresas6m();
+    const pageSize = 50;
+    let page = 0;
+    let total = 0;
 
-        // Pode vir um objeto único, normalizamos pra array
-        if (!Array.isArray(registros)) registros = registros ? [registros] : [];
+    while (true) {
+      const ds = { ...base, offsetPage: String(page), pageSize: String(pageSize) };
+      console.log(`🔎 Buscando página ${page}...`);
 
-        if (registros.length === 0) {
-          console.log("📭 Nenhum registro retornado. Fim da carga.");
-          break;
-        }
+      const resp = await loadRecords(ds);
+      let registros = resp?.responseBody?.entities?.entity ?? [];
 
-        await carregarTitulosNoBanco(registros);
-        total += registros.length;
-        console.log(`💾 Página ${page} gravada (${registros.length}). Acumulado: ${total}`);
+      if (!Array.isArray(registros)) registros = registros ? [registros] : [];
 
-        // Parar se for última página
-        if (registros.length < pageSize) break;
-        page++;
+      if (registros.length === 0) {
+        console.log("📭 Nenhum registro retornado. Fim da carga.");
+        break;
       }
 
-      console.log(`✅ Concluído: ${total} títulos processados e salvos no banco.`);
-      return { ok: true, total };
+      await carregarTitulosNoBanco(registros);
+      total += registros.length;
+      console.log(`💾 Página ${page} gravada (${registros.length}). Acumulado: ${total}`);
 
-    } catch (err) {
-      console.error("❌ Falha:", err?.response?.data || err.message);
+      if (registros.length < pageSize) break;
+      page++;
     }
-  }
 
-  // Executa
-  main();
+    console.log(`✅ Concluído: ${total} títulos processados e salvos no banco.`);
+    return { ok: true, total };
+  } catch (err) {
+    console.error("❌ Falha:", err?.response?.data || err.message);
+  }
+}
+
+main();

@@ -2,13 +2,12 @@
 import axios from "axios";
 import "dotenv/config";
 
-//credenciais e endpoint do .env
 const AUTH_URL = process.env.AUTH_URL;
 const CLIENT_ID = process.env.SNK_CLIENT_ID;
 const CLIENT_SECRET = process.env.SNK_CLIENT_SECRET;
 const X_TOKEN = process.env.SNK_X_TOKEN;
 
-// cache em memória simples
+// cache em memória
 let tokenCache = {
   accessToken: null,
   expAt: 0 
@@ -44,7 +43,7 @@ export async function getAccessToken() {
     throw new Error("Falha ao obter access_token (resposta sem token).");
   }
 
-  const expiresIn = Number(data.expires_in ?? 300); // fallback 5 min
+  const expiresIn = Number(data.expires_in ?? 300); 
   tokenCache = {
     accessToken: data.access_token,
     expAt: Math.floor(Date.now() / 1000) + expiresIn

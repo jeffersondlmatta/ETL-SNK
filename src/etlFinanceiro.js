@@ -1,4 +1,4 @@
-// src/etlFinanceiro.js
+
 import pg from "pg";
 import "dotenv/config";
 const { Pool } = pg;
@@ -93,7 +93,7 @@ async function upsertTitulo(client, t) {
   await client.query(sql, params);
 }
 
-// Inserção em lote (com transação)
+// Inserção em lote
 export async function carregarTitulosNoBanco(registros) {
   const client = await pool.connect();
   try {
@@ -101,10 +101,10 @@ export async function carregarTitulosNoBanco(registros) {
     for (const row of registros) {
       const t = mapRowToDb(row);
 
-      // ⚙️ Regras de filtragem:
-      // 1️⃣ nufin deve existir
-      // 2️⃣ numnota deve ser diferente de 0
-      // 3️⃣ descr_natureza deve começar com 'receita'
+      //  Regras de filtragem:
+      //  nufin deve existir
+      //  numnota deve ser diferente de 0
+      //  descr_natureza deve começar com 'receita'
       const descr = (t.descr_natureza || "").toLowerCase().trim();
       const startsWithReceita = descr.startsWith("receita");
 

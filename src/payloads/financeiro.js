@@ -1,13 +1,13 @@
-// src/payloads/financeiro.js
+
 // ===================================================
 // Gera dataset para todas as empresas e parceiros
-// Com DTVENC entre hoje e 6 meses atrás (pagos + em aberto)
+// Com DTVENC entre hoje e 9 meses atrás (pagos + em aberto)
 // ===================================================
 
-export function intervaloUltimos6Meses() {
+export function intervaloUltimos9Meses() {
   const hoje = new Date();
   const inicio = new Date(hoje);
-  inicio.setMonth(inicio.getMonth() - 3);
+  inicio.setMonth(inicio.getMonth() - 9);
 
   const fmt = (d) => {
     const dd = String(d.getDate()).padStart(2, '0');
@@ -20,7 +20,7 @@ export function intervaloUltimos6Meses() {
 }
 
 export function dataSetTodasEmpresas6m() {
-  const { inicioFmt, hojeFmt } = intervaloUltimos6Meses();
+  const { inicioFmt, hojeFmt } = intervaloUltimos9Meses();
 
   return {
     rootEntity: "Financeiro",

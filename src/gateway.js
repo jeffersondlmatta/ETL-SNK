@@ -1,9 +1,11 @@
-// src/gateway.js
+
 import axios from "axios";
 import { getAccessToken } from "./auth.js";
 
 const GATEWAY_URL = process.env.GATEWAY_URL ?? "https://api.sandbox.sankhya.com.br/gateway/v1/mge/service.sbr?outputType=json";
 const API_TIMEOUT_MS = 60000;
+
+console.log("➡️ GATEWAY_URL em uso:", GATEWAY_URL);
 
 /**
  * Chama o CRUDServiceProvider.loadRecords via Gateway (POST).
@@ -39,7 +41,6 @@ export async function loadRecordsAllPages(baseDataSet, getPageRecords) {
   const all = [];
   let page = 0;
 
-  // alguns ambientes exigem offsetPage string
   while (true) {
     const ds = { ...baseDataSet, offsetPage: String(page) };
     const resp = await loadRecords(ds);
@@ -52,7 +53,7 @@ export async function loadRecordsAllPages(baseDataSet, getPageRecords) {
     if (!rows.length) break;
 
     page += 1;
-    // TODO: se sua resposta trouxer totalPages/hasMoreResult, troque a condição acima
+ 
   }
   return all;
 }
